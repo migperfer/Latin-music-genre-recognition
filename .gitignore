@@ -1,5 +1,3 @@
-/model_big_100epochs.pt
-/model.pt
 /loss_train.npy
 /loss_test.npy
 /c_matrix.npy
