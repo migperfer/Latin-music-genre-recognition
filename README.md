@@ -75,5 +75,10 @@ If you want to check the confusion matrices, this will be helpful:
 genredict = {'reggaeton': 0, 'bachata': 1, 'salsa': 2,
              'merengue': 3, 'chachacha': 4}
 ``` 
-
+### Requirements
+- Librosa
+- Pytorch
+- Numpy
+- Pandas
+- [Optional] Cudatoolkit to speed up your training/prediction process.
 
