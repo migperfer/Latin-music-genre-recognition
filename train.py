@@ -1,8 +1,7 @@
 from sklearn.metrics import confusion_matrix
 import torch as t
 import torch.nn as nn
-import torch.nn.functional as F
-from torch.optim import Adam, SGD
+from torch.optim import Adam
 import numpy as np
 from model import GenreClassifier
 from torch.utils.data import DataLoader, random_split
@@ -11,6 +10,7 @@ import sys
 
 
 def main():
+    # Load the datasets
     csvfile_dir = sys.argv[1]
     bsegmentdir = sys.argv[2]
     m_state_dic = sys.argv[3]
@@ -23,20 +23,32 @@ def main():
     test_size = int(0.5 * tt_aux)
     valid_size = tt_aux - test_size
     train_dataset_d, test_dataset_d, validation_dataset_d = random_split(daset, [train_size, test_size, valid_size])
-    bs = 1
+    bs = 32  # Batch size
     train_dl = DataLoader(train_dataset_d, batch_size=bs)
     test_dl = DataLoader(test_dataset_d, batch_size=bs)
     val_dl = DataLoader(validation_dataset_d, batch_size=1)
 
     model = GenreClassifier()
 
+    device = t.device('cuda' if t.cuda.is_available() else 'cpu')
+    print('Using device:', device)
+    print('---------------')
+    model.to(device)
+    # Additional Info when using cuda
+    if device.type == 'cuda':
+        print(t.cuda.get_device_name(0))
+        print('Memory Usage:')
+        print('Allocated:', round(t.cuda.memory_allocated(0) / 1024 ** 3, 1), 'GB')
+        print('Cached:   ', round(t.cuda.memory_cached(0) / 1024 ** 3, 1), 'GB')
+
+    # The encodings
     genredict = {'reggaeton': 0, 'bachata': 1, 'salsa': 2,
                  'merengue': 3, 'chachacha': 4}
 
     def str_t_code(strings, diction):
-        return t.tensor([diction.get(string) for string in strings])
+        return t.tensor([diction.get(string) for string in strings]).to(device)
 
-    loss_fun = nn.NLLLoss()
+    loss_fun = nn.NLLLoss()  # The loss function
 
     # Main loop
     loss_train = []
@@ -54,7 +66,7 @@ def main():
                 optimizer.zero_grad()
                 spectrogram = sample[0]
                 gcode = str_t_code(sample[1], genredict)
-                predicted = model(spectrogram)
+                predicted = model(spectrogram.to(device))
                 loss = loss_fun(predicted, gcode)
                 loss.backward()
                 optimizer.step()
@@ -71,7 +83,7 @@ def main():
                     optimizer.zero_grad()
                     spectrogram = sample[0]
                     gcode = str_t_code(sample[1], genredict)
-                    predicted = model(spectrogram)
+                    predicted = model(spectrogram.to(device))
                     loss = loss_fun(predicted, gcode)
                     aux.append(loss.item())
             loss_test.append(np.mean(aux))
@@ -91,7 +103,7 @@ def main():
             model.eval()
             with t.no_grad():
                 for sample in val_dl:
-                    predicted = model(sample[0])
+                    predicted = model(sample[0].to(device))
                     predicted_g = inverse_dict[predicted.argmax(1).item()]
                     p.append(predicted_g)
                     act.append(sample[1][0])
@@ -113,7 +125,7 @@ def main():
 
 
 if __name__ == '__main__':
-    if len(sys.argv) < 4:
+    if len(sys.argv) != 4:
         print("Usage: train.py csvfile basesegmentdir model_state_dict")
     else:
         main()
