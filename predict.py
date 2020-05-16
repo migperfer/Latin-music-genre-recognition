@@ -33,6 +33,7 @@ def main():
     # Load the model
     model = GenreClassifier()
     model.load_state_dict(t.load(mod_state))
+    model.eval()
     device = t.device('cuda' if t.cuda.is_available() else 'cpu')
     print('Using device:', device)
     print('---------------')
@@ -52,7 +53,8 @@ def main():
                 song = song.strip('\n')
                 segments = segment_audio(song)
                 audio_spectrograms = get_spectrograms(segments)
-                pred = model(audio_spectrograms.to(device))
+                with t.no_grad():
+                    pred = model(audio_spectrograms.to(device))
                 aux = t.exp(pred)
                 percentage = aux.sum(dim=0)/len(aux)
                 percentage = percentage.tolist()
@@ -67,7 +69,8 @@ def main():
             song = os.path.join(args.input, song)
             segments = segment_audio(song)
             audio_spectrograms = get_spectrograms(segments)
-            pred = model(audio_spectrograms.to(device))
+            with t.no_grad():
+                pred = model(audio_spectrograms.to(device))
             aux = t.exp(pred)
             percentage = aux.sum(dim=0)/len(aux)
             percentage = percentage.tolist()
