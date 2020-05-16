@@ -4,7 +4,7 @@ Deep Learning for _Salsa/Bachata/Merengue/Chachacha/Reggaeton_ music recognition
 This repository contains an implementation of the _CNN Max Pooling_ network described [here](https://www.isca-speech.org/archive/Interspeech_2018/pdfs/2045.pdf) with a few differences:
 - Instead of using 30 seconds audio to train I take segments of 5 seconds long at `sr=44100`. This makes the model very 
 small, about 30k parameters.
-- The number of points taken for the fourier transform is `2048` and the hop size is `1024`.
+- The number of points taken for the fourier transform is `2048` and the hop size is `1024`. The log10 of the melscale values are taken.
 - For prediction the model takes 6 segments (of 5 seconds) from the middle section of the song, and use it as a 
 minibatch. Selection of the genre is done according to the mean probability for each genre across the 6 audios fragments.
 - The number of output classes are now 5.
