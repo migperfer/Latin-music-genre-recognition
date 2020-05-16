@@ -6,15 +6,33 @@ import numpy as np
 from model import GenreClassifier
 from torch.utils.data import DataLoader, random_split
 from dataset import LatinSegments
-import sys
-
+import os
+import argparse
 
 def main():
-    # Load the datasets
-    csvfile_dir = sys.argv[1]
-    bsegmentdir = sys.argv[2]
-    m_state_dic = sys.argv[3]
+    # Argument parsing:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("csvfile_dir", help="CSV file contaning the file_dir,genre data", type=str)
+    parser.add_argument("basedir", help="Base directory for the audios", type=str)
+    parser.add_argument("-b", "--batch_size", default=32, type=int, help="Batch size used for the training. Default 32")
+    parser.add_argument("-e", "--epochs", default=10, type=int, help="Number of epochs to train. Default 10")
+    parser.add_argument("-m", "--model_dictionary_state", default="model.pt", type=str,
+                        help="Pytorch file where to store model dictionary state. Default model.pt")
 
+    args = parser.parse_args()
+
+    csvfile_dir = args.csvfile_dir
+    bsegmentdir = args.basedir
+    if os.path.isfile(args.model_dictionary_state):
+        response = input("File {} already exists. Want to override it? [y]/n: ".format(args.model_dictionary_state))
+        if response == '' or response.lower() == 'y':
+            m_state_dic = args.csvfile_dir
+        else:
+            m_state_dic = input("Type the file for model dictionary output")
+    else:
+        m_state_dic = args.csvfile_dir
+
+    # Load the datasets
     daset = LatinSegments(csvfile_dir,
                           bsegmentdir,
                           transform=True)
@@ -23,7 +41,7 @@ def main():
     test_size = int(0.5 * tt_aux)
     valid_size = tt_aux - test_size
     train_dataset_d, test_dataset_d, validation_dataset_d = random_split(daset, [train_size, test_size, valid_size])
-    bs = 32  # Batch size
+    bs = args.batch_size  # Batch size
     train_dl = DataLoader(train_dataset_d, batch_size=bs)
     test_dl = DataLoader(test_dataset_d, batch_size=bs)
     val_dl = DataLoader(validation_dataset_d, batch_size=1)
@@ -54,8 +72,9 @@ def main():
     loss_train = []
     loss_test = []
     cmatrixes = []
+    epochs = args.epochs
     try:
-        for epoch in range(10):
+        for epoch in range(epochs):
             model.train()
             optimizer = Adam(model.parameters(), 1e-4 / (epoch / 4 + 1))
             # Train for this epoch
@@ -122,10 +141,5 @@ def main():
         t.save(model.state_dict(), m_state_dic+'_interrupted')
 
 
-
-
 if __name__ == '__main__':
-    if len(sys.argv) != 4:
-        print("Usage: train.py csvfile basesegmentdir model_state_dict")
-    else:
-        main()
+    main()
