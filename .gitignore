@@ -3,3 +3,5 @@
 /loss_train.npy
 /loss_test.npy
 /c_matrix.npy
+**.txt
+**.csv
